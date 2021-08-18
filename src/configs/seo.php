@@ -100,8 +100,9 @@ return [
 
     'sitemap_chunk_size' => 100,
 
-    'sitemap_max_tags_count'=>10000,
+    'sitemap_max_tags_count' => 10000,
 
+    'sitemap_localization' => false,
     /*
     |--------------------------------------------------------------------------
     | Sitemap url

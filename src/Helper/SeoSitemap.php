@@ -5,6 +5,7 @@ namespace Gwd\SeoMeta\Helper;
 use Carbon\Carbon;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class SeoSitemap
 {
@@ -31,6 +32,12 @@ class SeoSitemap
 
     private $sitemap_files_path;
 
+    private $default_locale;
+
+    private $available_locales;
+
+    private $localized_sitemaps;
+
     /**
      * Construct the sitemap class
      *
@@ -46,6 +53,10 @@ class SeoSitemap
         $this->sitemap_index_path = public_path('sitemap.xml');
         $this->sitemap_files_path = public_path('sitemap_files');
         File::ensureDirectoryExists($this->sitemap_files_path);
+
+        $this->default_locale = config('seo.fallback_locale');
+        $this->available_locales = config('seo.available_locales');
+        $this->localized_sitemaps = config('seo.sitemap_localization');
     }
 
     /**
@@ -120,14 +131,28 @@ class SeoSitemap
         }
         foreach ($this->items as $model_name => $model_items) {
             $xml = '<?xml version="1.0" encoding="UTF-8"?>' .
-                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+                '<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                    xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 
+                    http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd 
+                    http://www.w3.org/TR/xhtml11/xhtml11_schema.html
+                    http://www.w3.org/2002/08/xhtml/xhtml1-strict.xsd" 
+                    xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" 
+                    xmlns:xhtml="http://www.w3.org/TR/xhtml11/xhtml11_schema.html">';
             $lastmod = Carbon::now()->format('Y-m-d H:i:s');
 
             foreach ($model_items as $item) {
                 $use_lastmod = $this->use_lastmod ? ($item->lastmod ?? $lastmod) : null;
                 $xml .= '<url>' .
-                    '<loc>' . (substr($item->url, 0, 1) == '/' ? url($item->url) : $item->url) . '</loc>' .
-                    ($use_lastmod ? '<lastmod>' . $use_lastmod . '</lastmod>' : '') .
+                    '<loc>' . $this->getDefaultUrl($item->url) . '</loc>';
+
+                if ($this->localized_sitemaps) {
+                    foreach ($this->available_locales as $locale) {
+                        $xml .= '<xhtml:link rel="alternate" hreflang="' .
+                            $locale . '" href="' . $this->getDefaultUrl($item->url,$locale) . '" />';
+                    }
+                }
+
+                $xml .= ($use_lastmod ? '<lastmod>' . $use_lastmod . '</lastmod>' : '') .
                     '</url>';
 
                 if ($item->lastmod) {
@@ -153,5 +178,31 @@ class SeoSitemap
         $xml .= '</sitemapindex>';
         File::replace($this->sitemap_index_path, $xml);
         return File::get($this->sitemap_index_path);
+    }
+
+    /**
+     * @param string $url
+     * @param null $locale
+     *
+     * @return string
+     */
+    protected function getDefaultUrl(string $url,$locale = null): string
+    {
+        $append_locale = $this->localized_sitemaps;
+        $parsed_url = parse_url($url);
+        if (isset($parsed_url['path'])) {
+            $path = Str::remove('/', explode('/', $parsed_url['path']));
+            if (isset($path[1]) && in_array($path[1], $this->available_locales)) {
+                unset($path[1]);
+            }
+            $url_path = implode('/', $path);
+        } else {
+            $url_path = '';
+        }
+        if ($locale){
+            return  url($locale . $url_path);
+        }
+        $url = $append_locale ? url($this->default_locale . $url_path) : url($url_path);
+        return $url;
     }
 }
