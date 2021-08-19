@@ -199,6 +199,9 @@ class SeoSitemap
         } else {
             $url_path = '';
         }
+        if (isset($parsed_url['query'])){
+            $url_path.='?'.$parsed_url['query'];
+        }
         if ($locale){
             return  url($locale . $url_path);
         }
