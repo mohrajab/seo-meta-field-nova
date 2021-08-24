@@ -141,7 +141,7 @@ class SeoSitemap
             $lastmod = Carbon::now()->format('Y-m-d\TH:i:s+00:00');
 
             foreach ($model_items as $item) {
-                $use_lastmod = $this->use_lastmod ? (Carbon::parse($item->lastmod)->format('Y-m-d\TH:i:s+00:00') ?? $lastmod) : null;
+                $use_lastmod = $this->use_lastmod ? ($item->lastmod ?? $lastmod) : null;
                 $xml .= '<url>' .
                     '<loc>' . $this->getDefaultUrl($item->url) . '</loc>';
 
@@ -151,6 +151,7 @@ class SeoSitemap
                             $locale . '" href="' . $this->getDefaultUrl($item->url,$locale) . '" />';
                     }
                 }
+
                 $xml .= ($use_lastmod ? '<lastmod>' . $use_lastmod . '</lastmod>' : '') .
                     '</url>';
 
