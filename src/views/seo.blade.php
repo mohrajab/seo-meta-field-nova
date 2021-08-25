@@ -35,6 +35,8 @@
     @if(!empty($seo['image_path']))
     <meta property="og:image" content="{{ $seo['image_path'] }}" />
     @endif
+
+    <meta name="robots" content="{{ !empty($seo['follow_type']) ? $seo['follow_type'] : config('seo.default_follow_type') }}" />
 @else
 <meta name="robots" content="{{ !empty($seo['follow_type']) && config('seo.seo_status') ? $seo['follow_type'] : 'noindex, nofollow' }}" />
 @endif
