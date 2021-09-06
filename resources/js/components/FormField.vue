@@ -10,8 +10,8 @@
                     class="w-full form-control form-input form-input-bordered"
                     :class="errorClasses"
                     :placeholder="field.name[locale]"
-                    v-model="value.title[locale]"
-                    @input="setHasChanged"
+                    :value="value.title[locale]"
+                    @input="setHasChanged,updateField('title',locale,$event.target.value)"
                 />
                 <p
                     class="help-block"
@@ -24,8 +24,8 @@
                     class="w-full form-control form-input form-input-bordered py-3 h-auto"
                     :id="field.name + locale + '-description'"
                     placeholder="Enter SEO description"
-                    v-model="value.description[locale]"
-                    @input="setHasChanged"
+                    :value="value.description[locale]"
+                    @input="setHasChanged(),updateField('description',locale,$event.target.value)"
                 />
             </div>
             <div class="form-group mb-3">
@@ -34,8 +34,8 @@
                     class="w-full form-control form-input form-input-bordered py-3 h-auto"
                     :id="field.name + locale + '-keywords'"
                     placeholder="separate between keywords by ', ' ex : keyword1, keyword2"
-                    v-model="value.keywords[locale]"
-                    @input="setHasChanged"
+                    :value="value.keywords[locale]"
+                    @input="setHasChanged,updateField('keywords',locale,$event.target.value)"
                 />
             </div>
           </div>
@@ -93,6 +93,11 @@ export default {
         };
     },
     methods: {
+      updateField(key,locale,value){
+        let new_value= Object.assign({},this.value[key])
+        new_value[locale] = value;
+        this.$set(this.value,key,new_value)
+      },
         /*
          * Set the initial, internal value for the field.
          */
